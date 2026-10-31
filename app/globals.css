@@ -853,33 +853,50 @@ footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: url('/hero-bg.jpg') center/cover no-repeat;
   padding: 60px max(20px, env(safe-area-inset-left, 0px));
   position: relative;
+  background: #0a0616;
 }
-.hero::before {
-  content: '';
+.hero-slideshow { overflow: hidden; }
+.hero-slideshow::before, .hero-slideshow::after { display: none; }
+.hero-slide {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(10, 6, 22, 0.55) 0%,
-    rgba(10, 6, 22, 0.35) 40%,
-    rgba(10, 6, 22, 0.50) 70%,
-    rgba(10, 6, 22, 0.75) 100%
-  );
-  pointer-events: none;
-  z-index: 1;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 1.2s ease;
+}
+.hero-overlay { display: none; }
+.hero-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 28px;
+}
+.hero-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.4);
+  cursor: pointer;
+  padding: 0;
+  transition: background .3s, transform .3s;
+}
+.hero-dot.active {
+  background: #fff;
+  transform: scale(1.25);
 }
 .hero-inner {
   max-width: 680px;
   margin: 0 auto;
   text-align: center;
   position: relative;
-  z-index: 2;
+  z-index: 3;
   padding: 48px 20px;
 }
-.hero-eyebrow { font-size: .73rem; letter-spacing: .2em; text-transform: uppercase; color: var(--rose); font-weight: 500; margin-bottom: 14px; text-shadow: 0 1px 8px rgba(0,0,0,0.8); }
+.hero-eyebrow { font-size: .73rem; letter-spacing: .2em; text-transform: uppercase; color: var(--rose); font-weight: 500; margin-bottom: 14px; }
 .hero-title {
   font-family: var(--font-d);
   font-size: clamp(2.4rem, 7vw, 4.5rem);
@@ -888,7 +905,6 @@ footer {
   line-height: 1.15;
   margin-bottom: 18px;
   color: #fff;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.9), 0 4px 24px rgba(0,0,0,0.7);
 }
 .hero-title-wrap { display: block; margin-bottom: 18px; }
 .hero-sub {
@@ -897,7 +913,6 @@ footer {
   line-height: 1.75;
   max-width: 500px;
   margin: 0 auto 28px;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 2px 16px rgba(0,0,0,0.6);
 }
 .hero-sub-wrap { display: block; margin: 0 auto 28px; }
 .hero-acts { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }

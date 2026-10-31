@@ -4,6 +4,8 @@ import Link from 'next/link';
 import ProductGrid from '@/components/product/ProductGrid';
 import { useModal } from '@/context/ModalContext';
 
+const HERO_IMAGES = ['/hero-bg.jpg', '/bg-2.jpg', '/bg-3.jpg'];
+
 const CATS = [
   { id: 'necklace', label: 'Necklaces', img: '/necklace.jpg', desc: 'Delicate chains and statement pieces' },
   { id: 'earring',  label: 'Earrings',  img: '/earings.jpg',  desc: 'Hoops, studs, drops and chandeliers' },
@@ -20,6 +22,8 @@ const WHY = [
 export default function HomePage() {
   const [newArrivals, setNewArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [bgIndex, setBgIndex] = useState(0);
+  const [prevIndex, setPrevIndex] = useState(null);
   const { openModal } = useModal();
 
   useEffect(() => {
@@ -30,15 +34,43 @@ export default function HomePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    const t = setInterval(() => {
+      setPrevIndex(i => i);
+      setBgIndex(i => {
+        setPrevIndex(i);
+        return (i + 1) % HERO_IMAGES.length;
+      });
+    }, 5000);
+    return () => clearInterval(t);
+  }, []);
+
   return (
     <>
-      <section className="hero">
+      <section className="hero hero-slideshow">
+        {HERO_IMAGES.map((src, i) => (
+          <div
+            key={src}
+            className="hero-slide"
+            style={{
+              backgroundImage: `url('${src}')`,
+              opacity: i === bgIndex ? 1 : 0,
+              zIndex: i === bgIndex ? 1 : 0,
+            }}
+          />
+        ))}
+        <div className="hero-overlay" />
         <div className="hero-inner">
           <div className="hero-eyebrow">New Collection 2026</div>
           <h1 className="hero-title">Where Elegance<br />Meets Artistry</h1>
           <p className="hero-sub">Handcrafted jewellery that tells your story. Each piece is uniquely made with love, intention, and the finest materials.</p>
           <div className="hero-acts">
             <Link href="/shop" className="btn btn-primary" style={{ padding: '14px 32px', fontSize: '.88rem' }}>Explore Collection</Link>
+          </div>
+          <div className="hero-dots">
+            {HERO_IMAGES.map((_, i) => (
+              <button key={i} className={`hero-dot${i === bgIndex ? ' active' : ''}`} onClick={() => { setPrevIndex(bgIndex); setBgIndex(i); }} aria-label={`Slide ${i + 1}`} />
+            ))}
           </div>
         </div>
       </section>
