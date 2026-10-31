@@ -35,13 +35,10 @@ export async function GET(req) {
     itemsByOrder[i.order_id].push(i);
   });
 
-  // Fetch customer emails
-  const userIds = [...new Set(returns.map(r => r.user_id).filter(Boolean))];
+  // Batch-fetch all user emails in one call
+  const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
   const emailById = {};
-  await Promise.all(userIds.map(async uid => {
-    const { data } = await supabaseAdmin.auth.admin.getUserById(uid);
-    if (data?.user?.email) emailById[uid] = data.user.email;
-  }));
+  (usersData?.users || []).forEach(u => { emailById[u.id] = u.email; });
 
   const enriched = returns.map(r => ({
     ...r,

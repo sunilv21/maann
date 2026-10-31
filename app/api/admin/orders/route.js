@@ -20,7 +20,7 @@ export async function GET(req) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!orders?.length) return NextResponse.json([]);
 
-  // Fetch order items separately to avoid FK join dependency
+  // Fetch order items separately (no FK join)
   const orderIds = orders.map(o => o.id);
   const { data: allItems } = await supabaseAdmin
     .from('order_items')
@@ -33,13 +33,15 @@ export async function GET(req) {
     itemsByOrder[item.order_id].push(item);
   });
 
-  const ordersWithItems = await Promise.all(orders.map(async (order) => {
-    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(order.user_id);
-    return {
-      ...order,
-      order_items: itemsByOrder[order.id] || [],
-      userEmail: authUser?.user?.email || '',
-    };
+  // Batch-fetch all user emails in one call instead of N calls
+  const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+  const emailById = {};
+  (usersData?.users || []).forEach(u => { emailById[u.id] = u.email; });
+
+  const ordersWithItems = orders.map(order => ({
+    ...order,
+    order_items: itemsByOrder[order.id] || [],
+    userEmail: emailById[order.user_id] || '',
   }));
 
   return NextResponse.json(ordersWithItems);

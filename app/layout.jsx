@@ -4,16 +4,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { ModalProvider } from '@/context/ModalContext';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import AnnouncementBar from '@/components/layout/AnnouncementBar';
-import CartSidebar from '@/components/cart/CartSidebar';
-import AuthModal from '@/components/auth/AuthModal';
-import ProductModal from '@/components/product/ProductModal';
-import CheckoutModal from '@/components/checkout/CheckoutModal';
-import OrdersModal from '@/components/orders/OrdersModal';
-import ReturnModal from '@/components/orders/ReturnModal';
-import AddressModal from '@/components/addresses/AddressModal';
+import StorefrontShell from '@/components/layout/StorefrontShell';
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -47,17 +38,7 @@ export default function RootLayout({ children }) {
           <AuthProvider>
             <CartProvider>
               <ModalProvider>
-                <AnnouncementBar />
-                <Navbar />
-                <main>{children}</main>
-                <Footer />
-                <CartSidebar />
-                <AuthModal />
-                <ProductModal />
-                <CheckoutModal />
-                <OrdersModal />
-                <ReturnModal />
-                <AddressModal />
+                <StorefrontShell>{children}</StorefrontShell>
               </ModalProvider>
             </CartProvider>
           </AuthProvider>
