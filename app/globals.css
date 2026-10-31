@@ -559,14 +559,14 @@ a { text-decoration: none; color: inherit; }
 /* Product modal */
 .pm-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 22px; }
 @media (max-width: 540px) { .pm-layout { grid-template-columns: 1fr; } }
-.pm-img { background: var(--surface); border-radius: 8px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+.pm-img { background: var(--surface); border-radius: 8px; aspect-ratio: 1; overflow: hidden; }
 .pm-info { display: flex; flex-direction: column; gap: 10px; }
 .pm-cat { font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; color: var(--rose); font-weight: 500; }
 .pm-name { font-family: var(--font-d); font-size: 1.65rem; font-style: italic; font-weight: 600; line-height: 1.2; }
 .pm-price { font-size: 1.35rem; font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; }
 .pm-desc { font-size: .88rem; color: var(--fg-muted); line-height: 1.7; }
 .pm-mat { font-size: .78rem; color: var(--fg-muted); }
-.pm-acts { display: flex; flex-direction: column; gap: 9px; margin-top: auto; }
+.pm-acts { display: flex; flex-direction: column; gap: 9px; margin-top: 8px; }
 .variant-group { display: flex; flex-wrap: wrap; gap: 8px; }
 .variant-btn {
   padding: 5px 14px;

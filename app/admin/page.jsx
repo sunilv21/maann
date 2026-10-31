@@ -65,6 +65,7 @@ export default function AdminDashboard() {
         <StatCard label="Products" value={stats.totalProducts || 0} />
         <StatCard label="Customers" value={stats.totalUsers || 0} />
         {stats.pendingReturns > 0 && <StatCard label="Pending Returns" value={stats.pendingReturns} color="var(--danger)" />}
+        <StatCard label="Total Return Value" value={fmt(stats.totalReturnValue)} sub="All return order amounts" color="var(--warning, #E07A5A)" />
       </div>
 
       <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
