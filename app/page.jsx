@@ -5,9 +5,9 @@ import ProductGrid from '@/components/product/ProductGrid';
 import { useModal } from '@/context/ModalContext';
 
 const CATS = [
-  { id: 'necklace', label: 'Necklaces', emoji: '📿', desc: 'Delicate chains and statement pieces' },
-  { id: 'earring', label: 'Earrings', emoji: '✨', desc: 'Hoops, studs, drops and chandeliers' },
-  { id: 'bracelet', label: 'Bracelets', emoji: '💫', desc: 'Bangles, cuffs and charm bracelets' },
+  { id: 'necklace', label: 'Necklaces', img: '/necklace.jpg', desc: 'Delicate chains and statement pieces' },
+  { id: 'earring',  label: 'Earrings',  img: '/earings.jpg',  desc: 'Hoops, studs, drops and chandeliers' },
+  { id: 'bracelet', label: 'Bracelets', img: '/bracelet.jpg', desc: 'Bangles, cuffs and charm bracelets' },
 ];
 
 const WHY = [
@@ -53,7 +53,9 @@ export default function HomePage() {
           <div className="cat-grid">
             {CATS.map(c => (
               <Link key={c.id} href={`/shop?category=${c.id}`} className="cat-card">
-                <div className="cat-icon">{c.emoji}</div>
+                <div className="cat-img-wrap">
+                  <img src={c.img} alt={c.label} className="cat-img" />
+                </div>
                 <div className="cat-name">{c.label}</div>
                 <div className="cat-desc">{c.desc}</div>
                 <div className="cat-cta">Shop Now →</div>

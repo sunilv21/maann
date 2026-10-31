@@ -34,6 +34,11 @@ export const metadata = {
   title: 'Maann — Handcrafted Jewellery',
   description: 'Exquisite handcrafted necklaces, earrings and bracelets. Free shipping on orders above ₹1,500.',
   keywords: 'jewellery, necklaces, earrings, bracelets, handcrafted, Maann',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({ children }) {

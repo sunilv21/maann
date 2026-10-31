@@ -58,16 +58,25 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (name, email, phone, password, confirmPassword) => {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, password, confirmPassword }),
-    });
-    const data = await res.json();
-    if (!res.ok) return { error: data.error || 'Registration failed' };
+    if (!name?.trim()) return { error: 'Name is required' };
+    if (!email?.includes('@')) return { error: 'Valid email required' };
+    if (password.length < 6) return { error: 'Password must be at least 6 characters' };
+    if (password !== confirmPassword) return { error: 'Passwords do not match' };
+
     const supabase = createClient();
-    await supabase.auth.signInWithPassword({ email, password });
-    return { user: data.user };
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name, phone } },
+    });
+
+    if (error) return { error: error.message };
+
+    // If session is returned immediately, onAuthStateChange SIGNED_IN fires → auto logged in
+    if (data.session) return {};
+
+    // Email confirmation is required in Supabase settings
+    return { needsConfirmation: true };
   }, []);
 
   const logout = useCallback(async () => {

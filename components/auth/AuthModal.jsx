@@ -43,6 +43,10 @@ export default function AuthModal() {
       } else {
         const r = await register(form.name, form.email, form.phone, form.password, form.confirm);
         if (r?.error) { setErrors({ submit: r.error }); return; }
+        if (r?.needsConfirmation) {
+          setErrors({ submit: '✓ Account created! Please check your email to confirm before logging in.' });
+          return;
+        }
         showToast('Account created! Welcome to Maann ✦');
         closeModal('auth');
       }
@@ -66,9 +70,7 @@ export default function AuthModal() {
     <div className="modal-overlay" onClick={() => closeModal('auth')}>
       <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 400, width: '100%' }}>
         <div className="modal-head">
-          <div style={{ fontFamily: 'var(--font-d)', fontSize: '1.35rem', fontStyle: 'italic', fontWeight: 400 }}>
-            Ma<span style={{ color: 'var(--rose)' }}>a</span>nn
-          </div>
+          <img src="/logo.png" alt="Maann" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
           <button className="xbtn" onClick={() => closeModal('auth')}>
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -128,7 +130,13 @@ export default function AuthModal() {
           )}
 
           {errors.submit && (
-            <div style={{ background: 'color-mix(in srgb,var(--danger) 12%,transparent)', color: 'var(--danger)', padding: '10px 14px', borderRadius: 'var(--r)', fontSize: '.82rem' }}>
+            <div style={{
+              background: errors.submit.startsWith('✓')
+                ? 'color-mix(in srgb,var(--success,#22c55e) 12%,transparent)'
+                : 'color-mix(in srgb,var(--danger) 12%,transparent)',
+              color: errors.submit.startsWith('✓') ? 'var(--success,#16a34a)' : 'var(--danger)',
+              padding: '10px 14px', borderRadius: 'var(--r)', fontSize: '.82rem'
+            }}>
               {errors.submit}
             </div>
           )}

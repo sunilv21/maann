@@ -888,12 +888,14 @@ footer {
 .section-title { font-family: var(--font-d); font-size: clamp(1.8rem, 4vw, 2.6rem); font-style: italic; font-weight: 400; }
 .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 @media (max-width: 640px) { .cat-grid { grid-template-columns: 1fr; } }
-.cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px 22px; text-align: center; transition: transform .2s, box-shadow .2s; }
+.cat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; text-align: center; transition: transform .2s, box-shadow .2s; }
 .cat-card:hover { transform: translateY(-4px); box-shadow: var(--sh-md); }
-.cat-icon { font-size: 2.4rem; margin-bottom: 14px; }
-.cat-name { font-family: var(--font-d); font-size: 1.4rem; font-style: italic; font-weight: 600; margin-bottom: 6px; }
-.cat-desc { font-size: .82rem; color: var(--fg-muted); margin-bottom: 14px; line-height: 1.5; }
-.cat-cta { font-size: .78rem; color: var(--accent); font-weight: 500; letter-spacing: .05em; }
+.cat-img-wrap { width: 100%; aspect-ratio: 4/3; overflow: hidden; }
+.cat-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; }
+.cat-card:hover .cat-img { transform: scale(1.05); }
+.cat-name { font-family: var(--font-d); font-size: 1.4rem; font-style: italic; font-weight: 600; margin: 16px 0 6px; }
+.cat-desc { font-size: .82rem; color: var(--fg-muted); margin-bottom: 14px; line-height: 1.5; padding: 0 16px; }
+.cat-cta { font-size: .78rem; color: var(--accent); font-weight: 500; letter-spacing: .05em; padding-bottom: 20px; }
 .why-section { background: var(--surface); }
 .why-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px 20px; }
 .featured-section { background: var(--surface); }

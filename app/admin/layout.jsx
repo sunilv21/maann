@@ -52,9 +52,7 @@ export default function AdminLayout({ children }) {
         display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 50
       }}>
         <div style={{ padding: '24px 20px 16px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontFamily: 'var(--font-d)', fontSize: '1.5rem', fontStyle: 'italic', color: 'var(--fg)' }}>
-            Ma<span style={{ color: 'var(--rose)' }}>a</span>nn
-          </div>
+          <img src="/logo.png" alt="Maann" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
           <div style={{ fontSize: '.7rem', letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--fg-muted)', marginTop: 2 }}>Admin Panel</div>
         </div>
         <nav style={{ flex: 1, padding: '12px 0' }}>

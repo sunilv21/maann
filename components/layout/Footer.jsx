@@ -19,7 +19,7 @@ export default function Footer() {
       <div className="foot-inner">
         <div className="foot-top">
           <div>
-            <div className="foot-logo">Ma<span style={{ color: 'var(--rose)' }}>a</span>nn</div>
+            <img src="/logo.png" alt="Maann" style={{ height: 40, width: 'auto', objectFit: 'contain', marginBottom: 4 }} />
             <p className="foot-tagline">Jewellery crafted with love, delivered to your door.</p>
             <div style={{ display: 'flex', gap: 14, marginTop: 18 }}>
               {['M 4 4 h 16 v 12 H 4 Z M 4 4 l 8 8 8-8', 'M 23 3 a 10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z'].map((d, i) => (
