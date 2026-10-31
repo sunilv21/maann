@@ -19,18 +19,20 @@ const ORDER_STEP_LABELS = {
 const STATUS_LABELS = {
   confirmed: 'Confirmed', packed: 'Packed', shipped: 'Shipped',
   out_for_delivery: 'Out for Delivery', delivered: 'Delivered',
-  cancelled: 'Cancelled', return_requested: 'Return Requested', returned: 'Returned',
+  cancelled: 'Cancelled', return_requested: 'Return / Exchange Requested',
+  returned: 'Returned', exchange_delivered: 'Exchange Delivered',
 };
 
 const RETURN_FLOW = ['requested', 'pickup_scheduled', 'picked_up', 'refunded'];
-const EXCHANGE_FLOW = ['requested', 'pickup_scheduled', 'picked_up', 'exchanged'];
+const EXCHANGE_FLOW = ['requested', 'pickup_scheduled', 'picked_up', 'exchange_dispatched', 'exchange_delivered'];
 const RETURN_STEP_LABELS = {
-  requested:        { label: 'Requested',       icon: '📝' },
-  pickup_scheduled: { label: 'Pickup Scheduled', icon: '📅' },
-  picked_up:        { label: 'Picked Up',        icon: '📦' },
-  refund_initiated: { label: 'Refund Initiated', icon: '💸' },
-  refunded:         { label: 'Refunded',         icon: '✓' },
-  exchanged:        { label: 'Exchanged',        icon: '🔄' },
+  requested:          { label: 'Requested',        icon: '📝' },
+  pickup_scheduled:   { label: 'Pickup Scheduled', icon: '📅' },
+  picked_up:          { label: 'Picked Up',        icon: '📦' },
+  refund_initiated:   { label: 'Refund Initiated', icon: '💸' },
+  refunded:           { label: 'Refunded',         icon: '✓' },
+  exchange_dispatched:{ label: 'Out for Delivery', icon: '🚚' },
+  exchange_delivered: { label: 'Delivered',        icon: '✦' },
 };
 
 function OrderTimeline({ status }) {
@@ -71,7 +73,7 @@ function ReturnTimeline({ returnRequest }) {
   const flow = isExchange ? EXCHANGE_FLOW : RETURN_FLOW;
   const currentIdx = flow.indexOf(returnRequest.status);
   const displayFlow = isExchange
-    ? ['requested', 'pickup_scheduled', 'picked_up', 'exchanged']
+    ? ['requested', 'pickup_scheduled', 'picked_up', 'exchange_dispatched', 'exchange_delivered']
     : ['requested', 'pickup_scheduled', 'picked_up', 'refunded'];
 
   return (
@@ -83,7 +85,8 @@ function ReturnTimeline({ returnRequest }) {
         {displayFlow.map((s, i) => {
           const meta = RETURN_STEP_LABELS[s] || { label: s, icon: '•' };
           const done = currentIdx > i;
-          const active = returnRequest.status === s || (s === 'refunded' && returnRequest.status === 'refund_initiated');
+          const active = returnRequest.status === s
+            || (s === 'refunded' && returnRequest.status === 'refund_initiated');
           return (
             <div key={s} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
               <div style={{

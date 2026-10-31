@@ -1,11 +1,16 @@
 import { requireAdmin } from '@/lib/adminAuth';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { fetchAllRows } from '@/lib/supabase/fetchAllRows';
 import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req) {
   const auth = await requireAdmin(req);
   if (auth.error) return auth.error;
-  const { data, error } = await supabaseAdmin.from('products').select('*, product_variants(*)').order('id');
+  const { data, error } = await fetchAllRows(
+    supabaseAdmin.from('products').select('*, product_variants(*)').order('id')
+  );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }

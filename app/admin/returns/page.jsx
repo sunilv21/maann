@@ -1,17 +1,20 @@
 'use client';
 import { adminFetch } from '@/lib/adminFetch';
-import { useState, useEffect } from 'react';
+import { registerAdminRefresh } from '@/lib/adminRefresh';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/context/ToastContext';
 
-const FLOW = ['requested', 'pickup_scheduled', 'picked_up', 'refund_initiated', 'refunded', 'exchanged'];
+const RETURN_FLOW = ['requested', 'pickup_scheduled', 'picked_up', 'refund_initiated', 'refunded'];
+const EXCHANGE_FLOW = ['requested', 'pickup_scheduled', 'picked_up', 'exchange_dispatched', 'exchange_delivered'];
 
 const STATUS_META = {
-  requested:        { color: '#E05A7A', bg: '#fdedf1', label: 'Requested',         icon: '↩' },
-  pickup_scheduled: { color: '#C4875A', bg: '#fdf3eb', label: 'Pickup Scheduled',  icon: '📅' },
-  picked_up:        { color: '#4A8FC4', bg: '#eaf3fb', label: 'Picked Up',         icon: '📦' },
-  refund_initiated: { color: '#C4B44A', bg: '#fbf8e8', label: 'Refund Initiated',  icon: '💸' },
-  refunded:         { color: '#4BAF7A', bg: '#eaf7f0', label: 'Refunded',          icon: '✓' },
-  exchanged:        { color: '#7B5EA7', bg: '#f0ebf8', label: 'Exchanged',         icon: '🔄' },
+  requested:          { color: '#E05A7A', bg: '#fdedf1', label: 'Requested',           icon: '↩' },
+  pickup_scheduled:   { color: '#C4875A', bg: '#fdf3eb', label: 'Pickup Scheduled',    icon: '📅' },
+  picked_up:          { color: '#4A8FC4', bg: '#eaf3fb', label: 'Picked Up',           icon: '📦' },
+  refund_initiated:   { color: '#C4B44A', bg: '#fbf8e8', label: 'Refund Initiated',    icon: '💸' },
+  refunded:           { color: '#4BAF7A', bg: '#eaf7f0', label: 'Refunded',            icon: '✓' },
+  exchange_dispatched:{ color: '#7B5EA7', bg: '#f0ebf8', label: 'Exchange Dispatched', icon: '🚚' },
+  exchange_delivered: { color: '#4BAF7A', bg: '#eaf7f0', label: 'Exchange Delivered',  icon: '✦' },
 };
 
 function StatusBadge({ status }) {
@@ -30,18 +33,15 @@ function StatusBadge({ status }) {
 }
 
 function ReturnStepper({ ret, onUpdate, updating }) {
-  const currentIdx = FLOW.indexOf(ret.status);
   const isExchange = ret.type === 'exchange';
-  // For exchange: skip refund steps, show exchanged at end
-  const displayFlow = isExchange
-    ? ['requested', 'pickup_scheduled', 'picked_up', 'exchanged']
-    : ['requested', 'pickup_scheduled', 'picked_up', 'refund_initiated', 'refunded'];
+  const displayFlow = isExchange ? EXCHANGE_FLOW : RETURN_FLOW;
+  const currentIdx = displayFlow.indexOf(ret.status);
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', paddingBottom: 4 }}>
       {displayFlow.map((s, i) => {
         const meta = STATUS_META[s];
-        const done = currentIdx > FLOW.indexOf(s);
+        const done = currentIdx > i;
         const active = ret.status === s;
         const nextS = displayFlow[i + 1];
         const reachable = nextS && ret.status === s;
@@ -89,25 +89,28 @@ export default function AdminReturns() {
   const [loadError, setLoadError] = useState('');
   const [selected, setSelected] = useState(null);
   const [updating, setUpdating] = useState(null);
-  const [tick, setTick] = useState(0);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    let active = true;
+  const loadReturns = useCallback(async () => {
     setLoading(true);
     setLoadError('');
-    adminFetch('/api/admin/returns')
-      .then(async r => {
-        const d = await r.json();
-        if (!active) return;
-        if (!r.ok) { setLoadError(d.error || `Error ${r.status}`); setLoading(false); return; }
-        if (Array.isArray(d)) setReturns(d);
-        else setLoadError(d.error || 'Unexpected response from returns API');
-        setLoading(false);
-      })
-      .catch(e => { if (active) { setLoadError(e.message); setLoading(false); } });
-    return () => { active = false; };
-  }, [tick]);
+    try {
+      const response = await adminFetch('/api/admin/returns');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
+      if (!Array.isArray(data)) throw new Error(data.error || 'Unexpected response from returns API');
+      setReturns(data);
+    } catch (error) {
+      setLoadError(error.message || 'Could not load return requests.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadReturns();
+    return registerAdminRefresh(loadReturns);
+  }, [loadReturns]);
 
   async function updateStatus(id, status) {
     setUpdating(id);
@@ -138,21 +141,28 @@ export default function AdminReturns() {
         .ret-row:hover { background: var(--surface) !important; }
       `}</style>
 
+      <style>{`.admin-returns-spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
         <h1 style={{ fontFamily: 'var(--font-d)', fontSize: '2rem', fontStyle: 'italic', margin: 0 }}>Returns & Exchanges</h1>
-        <button onClick={() => setTick(t => t + 1)} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--fg-muted)', fontSize: '.8rem', cursor: loading ? 'wait' : 'pointer' }}>
-          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        <button
+          onClick={loadReturns}
+          disabled={loading}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', fontSize: '.82rem', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={loading ? 'admin-returns-spin' : ''}>
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
           Refresh
         </button>
       </div>
-      <style>{`.admin-returns-spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {loading ? (
         <div style={{ color: 'var(--fg-muted)', padding: 20 }}>Loading…</div>
       ) : loadError ? (
         <div style={{ padding: 20, color: 'var(--danger)', border: '1px solid var(--danger)', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div><strong>Error:</strong> {loadError}</div>
-          <button onClick={() => setTick(t => t + 1)} style={{ alignSelf: 'flex-start', padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--fg)', fontSize: '.8rem', cursor: 'pointer' }}>Try again</button>
+          <button onClick={loadReturns} style={{ alignSelf: 'flex-start', padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--fg)', fontSize: '.8rem', cursor: 'pointer' }}>Try again</button>
         </div>
       ) : (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>

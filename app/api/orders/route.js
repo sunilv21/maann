@@ -3,6 +3,8 @@ import { getServerUser } from '@/lib/serverAuth';
 import { getProductPrice } from '@/lib/productPricing';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req) {
   const { user, error } = await getServerUser(req);
   if (error) return error;
@@ -77,6 +79,7 @@ export async function POST(req) {
     .select()
     .single();
 
+  console.log('[orders/POST] order insert:', { id: order?.id, error: orderError?.message });
   if (orderError) return NextResponse.json({ error: orderError.message }, { status: 500 });
 
   await supabaseAdmin.from('order_items').insert(

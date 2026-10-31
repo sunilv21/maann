@@ -1,6 +1,7 @@
 'use client';
 import { adminFetch } from '@/lib/adminFetch';
-import { useState, useEffect } from 'react';
+import { registerAdminRefresh } from '@/lib/adminRefresh';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
 function StatCard({ label, value, sub, color }) {
@@ -20,12 +21,28 @@ const STATUS_COLORS = {
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    adminFetch('/api/admin/stats').then(r => r.json()).then(setStats);
+  const loadStats = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await adminFetch('/api/admin/stats');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Could not load dashboard (${response.status})`);
+      setStats(data);
+    } catch (loadError) {
+      setError(loadError.message || 'Could not load dashboard data.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  if (!stats) return <div style={{ color: 'var(--fg-muted)' }}>Loading dashboard...</div>;
+  useEffect(() => {
+    loadStats();
+    return registerAdminRefresh(loadStats);
+  }, [loadStats]);
 
   const fmt = n => '₹' + (n || 0).toLocaleString('en-IN');
 
@@ -33,7 +50,15 @@ export default function AdminDashboard() {
     <div>
       <h1 style={{ fontFamily: 'var(--font-d)', fontSize: '2rem', fontStyle: 'italic', marginBottom: 6 }}>Dashboard</h1>
       <p style={{ color: 'var(--fg-muted)', marginBottom: 28, fontSize: '.88rem' }}>Welcome back. Here's what's happening with Maann.</p>
+      {error && (
+        <div role="alert" style={{ padding: 16, marginBottom: 20, color: 'var(--danger)', border: '1px solid var(--danger)', borderRadius: 8 }}>
+          {error} <button type="button" onClick={loadStats} style={{ marginLeft: 8, color: 'inherit', border: 0, background: 'none', textDecoration: 'underline', cursor: 'pointer' }}>Try again</button>
+        </div>
+      )}
+      {loading && !stats ? <div style={{ color: 'var(--fg-muted)', paddingBottom: 20 }}>Loading dashboard…</div> : null}
+      {!stats && !loading && !error && <div style={{ color: 'var(--fg-muted)', paddingBottom: 20 }}>No dashboard data available.</div>}
 
+      {stats && <>
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
         <StatCard label="Total Revenue" value={fmt(stats.totalRevenue)} sub="All time (excl. cancelled)" color="var(--success)" />
         <StatCard label="Total Orders" value={stats.totalOrders || 0} />
@@ -77,6 +102,7 @@ export default function AdminDashboard() {
           </table>
         </div>
       </div>
+      </>}
     </div>
   );
 }

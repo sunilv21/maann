@@ -1,5 +1,6 @@
 'use client';
 import { adminFetch } from '@/lib/adminFetch';
+import { registerAdminRefresh } from '@/lib/adminRefresh';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import ProductSvg from '@/components/product/ProductSvg';
@@ -29,6 +30,8 @@ export default function AdminProducts() {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => registerAdminRefresh(loadProducts), [loadProducts]);
 
   async function deleteProduct(id, name) {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;

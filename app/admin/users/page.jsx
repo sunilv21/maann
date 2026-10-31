@@ -1,6 +1,7 @@
 'use client';
 import { adminFetch } from '@/lib/adminFetch';
-import { useState, useEffect } from 'react';
+import { registerAdminRefresh } from '@/lib/adminRefresh';
+import { useState, useEffect, useCallback } from 'react';
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
 const fmtTime = d => d ? new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
@@ -21,22 +22,27 @@ export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [tick, setTick] = useState(0);
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await adminFetch('/api/admin/users');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Failed to load users (${response.status})`);
+      if (!Array.isArray(data)) throw new Error(data.error || 'Users API returned an unexpected response.');
+      setUsers(data);
+    } catch (loadError) {
+      setError(loadError.message || 'Failed to load users.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let active = true;
-    setLoading(true); setError('');
-    adminFetch('/api/admin/users')
-      .then(r => r.json())
-      .then(d => {
-        if (!active) return;
-        if (Array.isArray(d)) setUsers(d);
-        else setError(d.error || 'Failed to load users');
-      })
-      .catch(e => { if (active) setError(e.message); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [tick]);
+    loadUsers();
+    return registerAdminRefresh(loadUsers);
+  }, [loadUsers]);
 
   return (
     <div>
@@ -53,17 +59,6 @@ export default function AdminUsers() {
             <div style={{ fontSize: '.72rem', color: 'var(--fg-muted)', marginTop: 2 }}>{users.length} registered</div>
           )}
         </div>
-        <button
-          onClick={() => setTick(t => t + 1)}
-          disabled={loading}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', fontSize: '.82rem', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }}>
-            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-          </svg>
-          Refresh
-        </button>
       </div>
 
       {loading ? (
@@ -71,7 +66,7 @@ export default function AdminUsers() {
       ) : error ? (
         <div style={{ padding: 24, border: '1px solid var(--danger)', borderRadius: 10, color: 'var(--danger)' }}>
           <div>{error}</div>
-          <button onClick={() => setTick(t => t + 1)} style={{ marginTop: 12, padding: '7px 14px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--card)', color: 'var(--fg)', cursor: 'pointer', fontSize: '.82rem' }}>
+          <button onClick={loadUsers} style={{ marginTop: 12, padding: '7px 14px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--card)', color: 'var(--fg)', cursor: 'pointer', fontSize: '.82rem' }}>
             Try again
           </button>
         </div>

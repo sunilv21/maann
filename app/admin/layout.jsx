@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { refreshAdminData } from '@/lib/adminRefresh';
 import Link from 'next/link';
 
 const NAV = [
@@ -17,6 +18,18 @@ export default function AdminLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function handleRefresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await refreshAdminData();
+      router.refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   useEffect(() => {
     if (loading) return;
@@ -24,6 +37,15 @@ export default function AdminLayout({ children }) {
       router.replace('/');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') refreshAdminData();
+    };
+
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => document.removeEventListener('visibilitychange', refreshWhenVisible);
+  }, []);
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg)' }}>
@@ -100,6 +122,21 @@ export default function AdminLayout({ children }) {
           <img src="/logo.png" alt="Maann" style={{ height: 28, objectFit: 'contain' }} />
           <span style={{ fontSize: '.7rem', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--fg-muted)' }}>Admin</span>
         </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 20px 0' }}>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            aria-label="Refresh admin data"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', fontSize: '.8rem', cursor: refreshing ? 'wait' : 'pointer', opacity: refreshing ? .7 : 1 }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: refreshing ? 'admin-refresh-spin .8s linear infinite' : 'none' }}>
+              <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            {refreshing ? 'Refreshing…' : 'Refresh data'}
+          </button>
+        </div>
         <div style={{ padding: '28px 20px' }}>
           {children}
         </div>
@@ -114,6 +151,7 @@ export default function AdminLayout({ children }) {
           .admin-main { margin-left: 0 !important; }
           .admin-topbar { display: flex !important; }
         }
+        @keyframes admin-refresh-spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );

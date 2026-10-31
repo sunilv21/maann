@@ -1,10 +1,11 @@
 'use client';
 import { adminFetch } from '@/lib/adminFetch';
-import { useState, useEffect } from 'react';
+import { registerAdminRefresh } from '@/lib/adminRefresh';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/context/ToastContext';
 
 const FLOW = ['confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered'];
-const ALL_STATUSES = [...FLOW, 'cancelled', 'return_requested'];
+const ALL_STATUSES = [...FLOW, 'cancelled', 'return_requested', 'returned'];
 const FILTER_TABS = ['all', ...ALL_STATUSES];
 
 const STATUS_META = {
@@ -13,8 +14,9 @@ const STATUS_META = {
   shipped:          { color: '#4A8FC4', bg: '#eaf3fb', label: 'Shipped',           icon: '🚚' },
   out_for_delivery: { color: '#C4B44A', bg: '#fbf8e8', label: 'Out for Delivery',  icon: '🛵' },
   delivered:        { color: '#4BAF7A', bg: '#eaf7f0', label: 'Delivered',         icon: '✦' },
-  cancelled:        { color: '#E05A7A', bg: '#fdedf1', label: 'Cancelled',         icon: '✕' },
-  return_requested: { color: '#E07A5A', bg: '#fdf0eb', label: 'Return Requested',  icon: '↩' },
+  cancelled:        { color: '#E05A7A', bg: '#fdedf1', label: 'Cancelled',          icon: '✕' },
+  return_requested: { color: '#E07A5A', bg: '#fdf0eb', label: 'Return / Exchange',  icon: '↩' },
+  returned:         { color: '#888',    bg: '#f5f5f5', label: 'Returned',           icon: '✓' },
 };
 
 function StatusBadge({ status }) {
@@ -89,32 +91,33 @@ function StatusStepper({ order, onUpdate, updating }) {
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('all');
-  const [reloadCount, setReloadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updating, setUpdating] = useState(null);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    let active = true;
-    async function load() {
-      setLoading(true); setLoadError('');
-      try {
-        const res = await adminFetch(`/api/admin/orders${filter !== 'all' ? `?status=${filter}` : ''}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-        if (!Array.isArray(data)) throw new Error('Unexpected response from orders API');
-        if (active) setOrders(data);
-      } catch (e) {
-        if (active) setLoadError(e.message);
-      } finally {
-        if (active) setLoading(false);
-      }
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const res = await adminFetch(`/api/admin/orders${filter !== 'all' ? `?status=${filter}` : ''}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+      if (!Array.isArray(data)) throw new Error('Orders API returned an unexpected response.');
+      setOrders(data);
+    } catch (e) {
+      setLoadError(e.message || 'Could not load orders.');
+    } finally {
+      setLoading(false);
     }
-    load();
-    return () => { active = false; };
-  }, [filter, reloadCount]);
+  }, [filter]);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  useEffect(() => registerAdminRefresh(loadOrders), [loadOrders]);
 
   async function updateStatus(id, status) {
     setUpdating(id);
@@ -148,17 +151,6 @@ export default function AdminOrders() {
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h1 style={{ fontFamily: 'var(--font-d)', fontSize: '2rem', fontStyle: 'italic', margin: 0 }}>Orders</h1>
-        <button
-          onClick={() => setReloadCount(c => c + 1)}
-          disabled={loading}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--fg)', fontSize: '.82rem', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }}>
-            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-          </svg>
-          Refresh
-        </button>
       </div>
 
       {/* Filter tabs */}
@@ -185,7 +177,7 @@ export default function AdminOrders() {
       ) : loadError ? (
         <div style={{ padding: 24, border: '1px solid var(--danger)', borderRadius: 10, color: 'var(--danger)' }}>
           <div>{loadError}</div>
-          <button onClick={() => setReloadCount(c => c + 1)} style={{ marginTop: 12, padding: '7px 14px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--card)', color: 'var(--fg)', cursor: 'pointer', fontSize: '.82rem' }}>
+          <button onClick={loadOrders} style={{ marginTop: 12, padding: '7px 14px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--card)', color: 'var(--fg)', cursor: 'pointer', fontSize: '.82rem' }}>
             Try again
           </button>
         </div>

@@ -1,6 +1,9 @@
 import { requireAdmin } from '@/lib/adminAuth';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { fetchAllRows } from '@/lib/supabase/fetchAllRows';
 import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req) {
   const auth = await requireAdmin(req);
@@ -17,10 +20,14 @@ export async function GET(req) {
     page++;
   }
 
-  const { data: profiles } = await supabaseAdmin.from('profiles').select('*');
+  const { data: profiles, error: profilesError } = await fetchAllRows(
+    supabaseAdmin.from('profiles').select('*')
+  );
+  if (profilesError) return NextResponse.json({ error: profilesError.message }, { status: 500 });
 
+  const profilesById = new Map((profiles || []).map(profile => [profile.id, profile]));
   const combined = allUsers.map(u => {
-    const profile = profiles?.find(p => p.id === u.id);
+    const profile = profilesById.get(u.id);
     return {
       id: u.id,
       email: u.email,
