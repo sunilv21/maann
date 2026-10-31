@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useModal } from '@/context/ModalContext';
 import DeliveryStep from './DeliveryStep';
 import PaymentStep from './PaymentStep';
@@ -15,10 +15,15 @@ export default function CheckoutModal() {
 
   const isOpen = activeModal === 'checkout';
 
-  const handleClose = () => {
-    closeModal('checkout');
-    setTimeout(() => { setStep(0); setAddress(null); setOrder(null); }, 300);
-  };
+  // Reset flow whenever the modal closes, regardless of how it was dismissed
+  useEffect(() => {
+    if (!isOpen) {
+      const t = setTimeout(() => { setStep(0); setAddress(null); setOrder(null); }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => closeModal('checkout');
 
   if (!isOpen) return null;
 

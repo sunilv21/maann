@@ -8,6 +8,7 @@ import ProductSvg from './ProductSvg';
 import StarRating from '@/components/ui/StarRating';
 import ReviewSection from '@/components/reviews/ReviewSection';
 import Spinner from '@/components/ui/Spinner';
+import { authFetch } from '@/lib/authFetch';
 import { getDiscountPercent, getProductPrice } from '@/lib/productPricing';
 
 const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
@@ -63,7 +64,7 @@ export default function ProductModal() {
 
   const handleWishlist = async () => {
     if (!user) { openModal('auth'); return; }
-    const res = await fetch(`/api/wishlist/${product.id}`, { method: 'POST', credentials: 'include' });
+    const res = await authFetch(`/api/wishlist/${product.id}`, { method: 'POST' });
     if (res.ok) {
       const d = await res.json();
       setWishlisted(d.wishlisted);

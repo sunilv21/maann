@@ -13,12 +13,17 @@ export async function POST(req, { params }) {
 
   const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
-    .select('id, status, order_items(product_name, qty, variant)')
+    .select('id, status')
     .eq('id', params.id)
     .eq('user_id', user.id)
     .single();
 
   if (orderError || !order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+
+  const { data: orderItemsRaw } = await supabaseAdmin
+    .from('order_items').select('product_name, qty, variant').eq('order_id', params.id);
+  order.order_items = orderItemsRaw || [];
+
   if (order.status !== 'delivered') {
     return NextResponse.json({ error: 'Returns and exchanges can only be requested for delivered orders.' }, { status: 400 });
   }
@@ -36,19 +41,36 @@ export async function POST(req, { params }) {
     ? `${body.reason.trim()}\n\nDetails: ${body.details.trim()}`
     : body.reason.trim();
 
+  const insertPayload = {
+    order_id: params.id,
+    user_id: user.id,
+    type: body.type,
+    reason,
+    status: 'requested',
+  };
+
+  // Store items snapshot
+  try {
+    const items = (order.order_items || []).map(i => ({ productName: i.product_name, qty: i.qty, variant: i.variant }));
+    if (items.length) insertPayload.items = items;
+  } catch {}
+
+  // Store refund details for COD returns
+  if (body.type === 'return' && body.refundMode) {
+    insertPayload.refund_mode = body.refundMode;
+    if (body.refundMode === 'upi') {
+      insertPayload.upi_id = body.upiId || null;
+    } else {
+      insertPayload.account_name = body.accountName || null;
+      insertPayload.bank_name = body.bankName || null;
+      insertPayload.account_number = body.accountNo || null;
+      insertPayload.ifsc = body.ifsc || null;
+    }
+  }
+
   const { data: returnReq, error: insertError } = await supabaseAdmin
     .from('return_requests')
-    .insert({
-      order_id: params.id,
-      user_id: user.id,
-      type: body.type,
-      reason,
-      items: (order.order_items || []).map(item => ({
-        productName: item.product_name,
-        qty: item.qty,
-        variant: item.variant
-      }))
-    })
+    .insert(insertPayload)
     .select()
     .single();
 

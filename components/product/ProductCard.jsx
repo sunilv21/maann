@@ -7,15 +7,16 @@ import { useCart } from '@/context/CartContext';
 import { useModal } from '@/context/ModalContext';
 import { useToast } from '@/context/ToastContext';
 import { getDiscountPercent, getProductPrice } from '@/lib/productPricing';
+import { authFetch } from '@/lib/authFetch';
 
 const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, onWishlistChange, initialWishlisted = false }) {
   const { user } = useAuth();
   const { addItem } = useCart();
   const { openModal } = useModal();
   const { showToast } = useToast();
-  const [wishlisted, setWishlisted] = useState(false);
+  const [wishlisted, setWishlisted] = useState(initialWishlisted);
   const [wloading, setWloading] = useState(false);
   const currentPrice = getProductPrice(product);
   const discountPercent = getDiscountPercent(product);
@@ -25,11 +26,12 @@ export default function ProductCard({ product }) {
     if (!user) { openModal('auth'); return; }
     setWloading(true);
     try {
-      const res = await fetch(`/api/wishlist/${product.id}`, { method: 'POST', credentials: 'include' });
+      const res = await authFetch(`/api/wishlist/${product.id}`, { method: 'POST' });
       if (res.ok) {
         const d = await res.json();
         setWishlisted(d.wishlisted);
         showToast(d.wishlisted ? 'Saved to wishlist ♡' : 'Removed from wishlist');
+        if (onWishlistChange) onWishlistChange(product.id, d.wishlisted);
       }
     } catch {} finally { setWloading(false); }
   };

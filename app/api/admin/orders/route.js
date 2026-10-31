@@ -11,18 +11,36 @@ export async function GET(req) {
 
   let query = supabaseAdmin
     .from('orders')
-    .select('*, order_items(*)')
+    .select('*')
     .order('created_at', { ascending: false });
 
   if (status && status !== 'all') query = query.eq('status', status);
 
-  const { data, error } = await query;
+  const { data: orders, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!orders?.length) return NextResponse.json([]);
 
-  const ordersWithEmail = await Promise.all((data || []).map(async (order) => {
+  // Fetch order items separately to avoid FK join dependency
+  const orderIds = orders.map(o => o.id);
+  const { data: allItems } = await supabaseAdmin
+    .from('order_items')
+    .select('*')
+    .in('order_id', orderIds);
+
+  const itemsByOrder = {};
+  (allItems || []).forEach(item => {
+    if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+    itemsByOrder[item.order_id].push(item);
+  });
+
+  const ordersWithItems = await Promise.all(orders.map(async (order) => {
     const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(order.user_id);
-    return { ...order, userEmail: authUser?.user?.email || '' };
+    return {
+      ...order,
+      order_items: itemsByOrder[order.id] || [],
+      userEmail: authUser?.user?.email || '',
+    };
   }));
 
-  return NextResponse.json(ordersWithEmail);
+  return NextResponse.json(ordersWithItems);
 }

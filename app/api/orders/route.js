@@ -7,13 +7,24 @@ export async function GET(req) {
   const { user, error } = await getServerUser(req);
   if (error) return error;
 
-  const { data } = await supabaseAdmin
+  const { data: orders } = await supabaseAdmin
     .from('orders')
-    .select('*, order_items(*), return_requests(*)')
+    .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  return NextResponse.json(data || []);
+  if (!orders?.length) return NextResponse.json([]);
+
+  const orderIds = orders.map(o => o.id);
+  const { data: allItems } = await supabaseAdmin.from('order_items').select('*').in('order_id', orderIds);
+  const { data: allReturns } = await supabaseAdmin.from('return_requests').select('*').in('order_id', orderIds);
+
+  const itemsByOrder = {};
+  const returnsByOrder = {};
+  (allItems || []).forEach(i => { if (!itemsByOrder[i.order_id]) itemsByOrder[i.order_id] = []; itemsByOrder[i.order_id].push(i); });
+  (allReturns || []).forEach(r => { if (!returnsByOrder[r.order_id]) returnsByOrder[r.order_id] = []; returnsByOrder[r.order_id].push(r); });
+
+  return NextResponse.json(orders.map(o => ({ ...o, order_items: itemsByOrder[o.id] || [], return_requests: returnsByOrder[o.id] || [] })));
 }
 
 export async function POST(req) {
@@ -73,5 +84,12 @@ export async function POST(req) {
 
   await supabaseAdmin.from('cart_items').delete().eq('user_id', user.id);
 
-  return NextResponse.json(order);
+  const orderItems = cartItems.map(i => ({
+    product_name: i.products.name,
+    price: getProductPrice(i.products),
+    qty: i.qty,
+    variant: i.variant,
+  }));
+
+  return NextResponse.json({ order: { ...order, order_items: orderItems } });
 }

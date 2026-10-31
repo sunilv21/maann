@@ -6,15 +6,19 @@ export async function GET(req, { params }) {
   const { user, error } = await getServerUser(req);
   if (error) return error;
 
-  const { data, error: orderError } = await supabaseAdmin
+  const { data: order, error: orderError } = await supabaseAdmin
     .from('orders')
-    .select('*, order_items(*), return_requests(*)')
+    .select('*')
     .eq('id', params.id)
     .eq('user_id', user.id)
     .single();
 
-  if (orderError) return NextResponse.json({ error: orderError.message }, { status: 404 });
-  return NextResponse.json(data);
+  if (orderError || !order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+
+  const { data: items } = await supabaseAdmin.from('order_items').select('*').eq('order_id', params.id);
+  const { data: returns } = await supabaseAdmin.from('return_requests').select('*').eq('order_id', params.id);
+
+  return NextResponse.json({ ...order, order_items: items || [], return_requests: returns || [] });
 }
 
 export async function PATCH(req, { params }) {

@@ -5,8 +5,11 @@ import { NextResponse } from 'next/server';
 export async function GET(req, { params }) {
   const auth = await requireAdmin(req);
   if (auth.error) return auth.error;
-  const { data } = await supabaseAdmin.from('orders').select('*, order_items(*), return_requests(*)').eq('id', params.id).single();
-  return NextResponse.json(data);
+  const { data: order } = await supabaseAdmin.from('orders').select('*').eq('id', params.id).single();
+  if (!order) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  const { data: items } = await supabaseAdmin.from('order_items').select('*').eq('order_id', params.id);
+  const { data: returns } = await supabaseAdmin.from('return_requests').select('*').eq('order_id', params.id);
+  return NextResponse.json({ ...order, order_items: items || [], return_requests: returns || [] });
 }
 
 export async function PATCH(req, { params }) {

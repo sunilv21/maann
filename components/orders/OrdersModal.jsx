@@ -8,29 +8,102 @@ import { authFetch } from '@/lib/authFetch';
 const fmt = n => '₹' + Number(n).toLocaleString('en-IN');
 const fmtDate = d => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
-const STATUS_STEPS = ['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
+const ORDER_FLOW = ['confirmed', 'packed', 'shipped', 'out_for_delivery', 'delivered'];
+const ORDER_STEP_LABELS = {
+  confirmed: { label: 'Confirmed', icon: '✓' },
+  packed:    { label: 'Packed',    icon: '📦' },
+  shipped:   { label: 'Shipped',   icon: '🚚' },
+  out_for_delivery: { label: 'Out for Delivery', icon: '🛵' },
+  delivered: { label: 'Delivered', icon: '✦' },
+};
 const STATUS_LABELS = {
-  confirmed: 'Order Confirmed',
-  processing: 'Processing',
-  shipped: 'Shipped',
-  out_for_delivery: 'Out for Delivery',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-  return_requested: 'Return Requested',
-  returned: 'Returned',
+  confirmed: 'Confirmed', packed: 'Packed', shipped: 'Shipped',
+  out_for_delivery: 'Out for Delivery', delivered: 'Delivered',
+  cancelled: 'Cancelled', return_requested: 'Return Requested', returned: 'Returned',
+};
+
+const RETURN_FLOW = ['requested', 'pickup_scheduled', 'picked_up', 'refunded'];
+const EXCHANGE_FLOW = ['requested', 'pickup_scheduled', 'picked_up', 'exchanged'];
+const RETURN_STEP_LABELS = {
+  requested:        { label: 'Requested',       icon: '📝' },
+  pickup_scheduled: { label: 'Pickup Scheduled', icon: '📅' },
+  picked_up:        { label: 'Picked Up',        icon: '📦' },
+  refund_initiated: { label: 'Refund Initiated', icon: '💸' },
+  refunded:         { label: 'Refunded',         icon: '✓' },
+  exchanged:        { label: 'Exchanged',        icon: '🔄' },
 };
 
 function OrderTimeline({ status }) {
-  const idx = STATUS_STEPS.indexOf(status);
+  const idx = ORDER_FLOW.indexOf(status);
   if (idx === -1) return null;
   return (
-    <div className="timeline">
-      {STATUS_STEPS.map((s, i) => (
-        <div key={s} className={`tl-step${i < idx ? ' done' : i === idx ? ' active' : ''}`}>
-          <div className="tl-dot" />
-          <div className="tl-label">{STATUS_LABELS[s]}</div>
-        </div>
-      ))}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', margin: '14px 0', paddingBottom: 4 }}>
+      {ORDER_FLOW.map((s, i) => {
+        const meta = ORDER_STEP_LABELS[s];
+        const done = idx > i;
+        const active = idx === i;
+        return (
+          <div key={s} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+              padding: '6px 8px', borderRadius: 8, minWidth: 58,
+              border: `1.5px solid ${(done || active) ? 'var(--accent)' : 'var(--border)'}`,
+              background: (done || active) ? 'rgba(var(--accent-rgb, 201,169,110),.08)' : 'var(--card)',
+              color: (done || active) ? 'var(--accent)' : 'var(--fg-muted)',
+              opacity: (!done && !active) ? 0.5 : 1,
+            }}>
+              <span style={{ fontSize: '.85rem' }}>{done ? '✓' : meta.icon}</span>
+              <span style={{ fontSize: '.6rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{meta.label}</span>
+            </div>
+            {i < ORDER_FLOW.length - 1 && (
+              <div style={{ width: 16, height: 2, flexShrink: 0, background: done ? 'var(--accent)' : 'var(--border)' }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ReturnTimeline({ returnRequest }) {
+  if (!returnRequest) return null;
+  const isExchange = returnRequest.type === 'exchange';
+  const flow = isExchange ? EXCHANGE_FLOW : RETURN_FLOW;
+  const currentIdx = flow.indexOf(returnRequest.status);
+  const displayFlow = isExchange
+    ? ['requested', 'pickup_scheduled', 'picked_up', 'exchanged']
+    : ['requested', 'pickup_scheduled', 'picked_up', 'refunded'];
+
+  return (
+    <div style={{ background: 'var(--surface)', borderRadius: 8, padding: '12px 14px', marginTop: 12, border: '1px solid var(--border)' }}>
+      <div style={{ fontSize: '.68rem', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--fg-muted)', fontWeight: 600, marginBottom: 10 }}>
+        {isExchange ? '🔄 Exchange' : '↩ Return'} · {returnRequest.reason}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0, overflowX: 'auto', paddingBottom: 2 }}>
+        {displayFlow.map((s, i) => {
+          const meta = RETURN_STEP_LABELS[s] || { label: s, icon: '•' };
+          const done = currentIdx > i;
+          const active = returnRequest.status === s || (s === 'refunded' && returnRequest.status === 'refund_initiated');
+          return (
+            <div key={s} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                padding: '6px 8px', borderRadius: 8, minWidth: 62,
+                border: `1.5px solid ${(done || active) ? '#C4875A' : 'var(--border)'}`,
+                background: (done || active) ? '#fdf3eb' : 'var(--card)',
+                color: (done || active) ? '#C4875A' : 'var(--fg-muted)',
+                opacity: (!done && !active) ? 0.5 : 1,
+              }}>
+                <span style={{ fontSize: '.85rem' }}>{done ? '✓' : meta.icon}</span>
+                <span style={{ fontSize: '.58rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.2 }}>{meta.label}</span>
+              </div>
+              {i < displayFlow.length - 1 && (
+                <div style={{ width: 14, height: 2, flexShrink: 0, background: done ? '#C4875A' : 'var(--border)' }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -142,14 +215,9 @@ export default function OrdersModal() {
                         </div>
                       )}
 
-                      {STATUS_STEPS.includes(order.status) && <OrderTimeline status={order.status} />}
+                      {ORDER_FLOW.includes(order.status) && <OrderTimeline status={order.status} />}
 
-                      {order.returnRequest && (
-                        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r)', padding: '10px 14px', fontSize: '.82rem', marginTop: 12 }}>
-                          <strong>Return Request:</strong> {order.returnRequest.type} — {order.returnRequest.reason}
-                          <span style={{ marginLeft: 8, color: 'var(--fg-muted)', textTransform: 'capitalize' }}>({order.returnRequest.status})</span>
-                        </div>
-                      )}
+                      {order.returnRequest && <ReturnTimeline returnRequest={order.returnRequest} />}
 
                       <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
                         {order.status === 'confirmed' && (

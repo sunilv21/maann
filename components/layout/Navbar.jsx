@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { useModal } from '@/context/ModalContext';
+import { authFetch } from '@/lib/authFetch';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -25,9 +26,9 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!user) { setWishCount(0); return; }
-    fetch('/api/wishlist', { credentials: 'include' })
-      .then(r => r.ok ? r.json() : { products: [] })
-      .then(d => setWishCount(d.products?.length || 0))
+    authFetch('/api/wishlist')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setWishCount(Array.isArray(d) ? d.length : 0))
       .catch(() => {});
   }, [user]);
 
@@ -90,12 +91,17 @@ export default function Navbar() {
               {cartCount > 0 && <span className="badge">{cartCount}</span>}
             </button>
             {!user ? (
-              <button className="btn btn-outline" onClick={() => openModal('auth')} style={{ padding: '7px 14px', fontSize: '.78rem' }}>Login</button>
+              <>
+                <button className="btn btn-outline nav-login-btn" onClick={() => openModal('auth')} style={{ padding: '7px 14px', fontSize: '.78rem' }}>Login</button>
+                <button className="ib nav-user-icon" onClick={() => openModal('auth')} aria-label="Sign in">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </button>
+              </>
             ) : (
               <div style={{ position: 'relative' }} ref={dropRef}>
-                <button className="ib" onClick={() => setDropOpen(v => !v)} style={{ borderRadius: 20, padding: '6px 12px', gap: 6, background: 'var(--surface)' }}>
-                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  <span style={{ fontSize: '.82rem', fontWeight: 500, maxWidth: 72, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name.split(' ')[0]}</span>
+                <button className="ib nav-user-btn" onClick={() => setDropOpen(v => !v)} aria-label="Account">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span className="nav-user-name">{user.name.split(' ')[0]}</span>
                 </button>
                 {dropOpen && (
                   <div className="u-drop">
@@ -139,7 +145,20 @@ export default function Navbar() {
           </div>
         </div>
       )}
-      <style>{`@media(max-width:768px){#mob-btn{display:flex!important}}`}</style>
+      <style>{`
+        @media(max-width:768px){
+          #mob-btn{display:flex!important}
+          .nav-login-btn{display:none!important}
+          .nav-user-icon{display:inline-flex!important}
+          .nav-user-name{display:none!important}
+          .nav-user-btn{padding:0!important;background:none!important;border-radius:0!important;gap:0!important}
+        }
+        @media(min-width:769px){
+          .nav-user-icon{display:none!important}
+          .nav-user-name{display:inline!important;font-size:.82rem;font-weight:500;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+          .nav-user-btn{border-radius:20px!important;padding:6px 12px!important;gap:6px!important;background:var(--surface)!important;}
+        }
+      `}</style>
     </>
   );
 }

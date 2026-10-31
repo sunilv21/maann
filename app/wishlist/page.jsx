@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useModal } from '@/context/ModalContext';
+import { authFetch } from '@/lib/authFetch';
 import ProductCard from '@/components/product/ProductCard';
 import Spinner from '@/components/ui/Spinner';
 import Link from 'next/link';
@@ -15,9 +16,9 @@ export default function WishlistPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { setLoading(false); return; }
-    fetch('/api/wishlist', { credentials: 'include' })
-      .then(r => r.json())
-      .then(d => setProducts(d.products || []))
+    authFetch('/api/wishlist')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setProducts(Array.isArray(d) ? d : []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user, authLoading]);
@@ -62,7 +63,16 @@ export default function WishlistPage() {
         </div>
       ) : (
         <div className="pg">
-          {products.map(p => <ProductCard key={p.id} product={p} />)}
+          {products.map(p => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              initialWishlisted={true}
+              onWishlistChange={(id, wishlisted) => {
+                if (!wishlisted) setProducts(prev => prev.filter(x => x.id !== id));
+              }}
+            />
+          ))}
         </div>
       )}
     </div>

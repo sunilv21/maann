@@ -39,7 +39,6 @@ export default function HomePage() {
           <p className="hero-sub">Handcrafted jewellery that tells your story. Each piece is uniquely made with love, intention, and the finest materials.</p>
           <div className="hero-acts">
             <Link href="/shop" className="btn btn-primary" style={{ padding: '14px 32px', fontSize: '.88rem' }}>Explore Collection</Link>
-            <Link href="/about" className="btn btn-outline" style={{ padding: '14px 32px', fontSize: '.88rem' }}>Our Story</Link>
           </div>
         </div>
       </section>

@@ -29,21 +29,23 @@ export default function Footer() {
               ))}
             </div>
           </div>
-          <div>
-            <h4>Company</h4>
-            <Link href="/about">About Us</Link>
-            <Link href="/help">Help & FAQ</Link>
-            <Link href="/help">Returns</Link>
-            <a>Privacy Policy</a>
-            <a>Terms of Service</a>
-          </div>
-          <div>
-            <h4>Categories</h4>
-            <Link href="/shop?category=necklace">Necklaces</Link>
-            <Link href="/shop?category=earring">Earrings</Link>
-            <Link href="/shop?category=bracelet">Bracelets</Link>
-            <Link href="/shop">New Arrivals</Link>
-            <Link href="/shop">Best Sellers</Link>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, gridColumn: 'span 2' }}>
+            <div className="foot-col">
+              <h4>Company</h4>
+              <Link href="/about">About Us</Link>
+              <Link href="/help">Help & FAQ</Link>
+              <Link href="/help">Returns</Link>
+              <a>Privacy Policy</a>
+              <a>Terms of Service</a>
+            </div>
+            <div className="foot-col">
+              <h4>Categories</h4>
+              <Link href="/shop?category=necklace">Necklaces</Link>
+              <Link href="/shop?category=earring">Earrings</Link>
+              <Link href="/shop?category=bracelet">Bracelets</Link>
+              <Link href="/shop">New Arrivals</Link>
+              <Link href="/shop">Best Sellers</Link>
+            </div>
           </div>
           <div>
             <h4>Stay in the loop</h4>
